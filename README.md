@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Brühlweg-IT</title>
+    <title>Ticket System</title>
     <style>
         body { font-family: Arial; margin: 20px; }
         form { margin-bottom: 20px; }
@@ -25,28 +25,40 @@
         <textarea id="description" required></textarea>
         <button type="submit">Ticket einreichen</button>
     </form>
-    <h2>Eingereichte Tickets</h2>
-    <div id="tickets"></div>
     <script>
+        const owner = 'bruelweg-it';
+        const repo = 'bruelweg-it.github.io';
+        const token = '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';
         const form = document.getElementById('ticketForm');
-        const ticketsDiv = document.getElementById('tickets');
-        let tickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        function displayTickets() {
-            ticketsDiv.innerHTML = '';
-            tickets.forEach((ticket, index) => {
-                const ticketDiv = document.createElement('div');
-                ticketDiv.className = 'ticket';
-                ticketDiv.innerHTML = `
-                    <h3>${ticket.subject}</h3>
-                    <p><strong>Name:</strong> ${ticket.name}</p>
-                    <p><strong>E-Mail:</strong> ${ticket.email}</p>
-                    <p><strong>Beschreibung:</strong> ${ticket.description}</p>
-                    <p><strong>Datum:</strong> ${ticket.date}</p>
-                `;
-                ticketsDiv.appendChild(ticketDiv);
-            });
+        async function createTicketFile(ticket) {
+            const content = `Name: ${ticket.name}\nEmail: ${ticket.email}\nSubject: ${ticket.subject}\nDescription: ${ticket.description}\nDate: ${ticket.date}`;
+            const encodedContent = btoa(unescape(encodeURIComponent(content)));
+            const filename = `ticket-${Date.now()}.txt`;
+            const path = `tickets/${filename}`;
+            try {
+                const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Add ticket: ${ticket.subject}`,
+                        content: encodedContent
+                    })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(`Failed to create ticket: ${error.message}`);
+                }
+                form.reset();
+                alert('Ticket erfolgreich eingereicht!');
+            } catch (error) {
+                console.error('Error creating ticket:', error);
+                alert('Fehler beim Speichern des Tickets: ' + error.message);
+            }
         }
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
@@ -59,12 +71,8 @@
                 description,
                 date: new Date().toLocaleString()
             };
-            tickets.push(ticket);
-            localStorage.setItem('tickets', JSON.stringify(tickets));
-            displayTickets();
-            form.reset();
+            await createTicketFile(ticket);
         });
-        displayTickets();
     </script>
 </body>
 </html>
