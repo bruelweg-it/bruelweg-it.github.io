@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Ticket System</title>
+    <title>Brühlweg-IT</title>
     <style>
         body { font-family: Arial; margin: 20px; }
         form { margin-bottom: 20px; }
